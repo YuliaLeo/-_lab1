@@ -2,9 +2,9 @@ import aiohttp
 import asyncio
 import os
 import urllib.parse
+import argparse
 
 async def downloadFile(url, outputFile, progress):
-    parsedUrl = urllib.parse.urlparse(url)
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             if response.status != 200:
@@ -24,9 +24,17 @@ async def progressReporter(progress):
         await asyncio.sleep(1)
 
 async def main():
-    url = input("Введите URL файла, который хотите скачать: ").strip()
+    parser = argparse.ArgumentParser(description="Скачивание файла по URL.")
+    parser.add_argument("url", type=str, help="URL файла, который нужно скачать.")
+    
+    args = parser.parse_args()
+    url = args.url.strip()
     parsedUrl = urllib.parse.urlparse(url)
     filename = os.path.basename(parsedUrl.path)
+
+    if not filename:
+        print("Невозможно определить имя файла из URL.")
+        return
 
     progress = {"bytes": 0, "done": False}
 
@@ -35,11 +43,12 @@ async def main():
     try:
         print(f"Загрузка начата")
         await downloadFile(url, filename, progress)
-        print("Загрузка завершена.")
+        print(f"Загрузка завершена")
     except Exception as e:
         print(f"Произошла ошибка: {e}")
     finally:
         progress["done"] = True
         await progressTask
 
-asyncio.run(main())
+if __name__ == "__main__":
+    asyncio.run(main())
